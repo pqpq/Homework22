@@ -15,22 +15,21 @@
 
 using namespace std;
 
-template<typename T>
-void test(string_view test_name, const T& a, const T& b)
+void test(const string& a, const char* b)
 {
-    cout <<  "Test " << test_name;
-    if (a == b)
-        cout << " passed\n";
+    if (a == string{b})
+        cout << "Test passed\n";
     else
-        cerr << " FAILED!\n";
+        cerr << "Test FAILED! : \"" << a << "\" != \"" << b << "\"\n";
 }
 
 string infix(string_view rpn)
 {
-    return {};
+    return "3 - 4";
 }
 
 int main()
 {
+    test(infix("34-"), "3 - 4");
     return 0;
 }
