@@ -11,10 +11,10 @@
 
 #include <cassert>
 #include <cctype>
+#include <deque>
 #include <iostream>
 #include <string>
 #include <utility>
-#include <deque>
 
 using namespace std;
 
@@ -34,6 +34,16 @@ bool contains(const char* s, char c)
     return string_view(s).find(c) != string_view::npos;
 }
 
+bool is_number(string_view s)
+{
+    return contains(digits, s[0]);
+}
+
+bool is_operator(string_view s)
+{
+    return contains(operators, s[0]);
+}
+
 deque<string_view> tokenise(string_view s)
 {
     cout << "tokenise(" << s << ") :\n";
@@ -46,14 +56,14 @@ deque<string_view> tokenise(string_view s)
         while (!s.empty() && isspace(s[0])) s.remove_prefix(1);
         cout << " '" << s << "' -> ";
 
-        if (contains(digits, s[0]))
+        if (is_number(s))
         {
             auto end = s.find_first_not_of(digits);
             tokens.push_front(s.substr(0, end));
             s.remove_prefix(end);
             cout << "dig '" << tokens.back() << "'\n";
         }
-        else if (contains(operators, s[0]))
+        else if (is_operator(s))
         {
             tokens.push_front(s.substr(0, 1));
             s.remove_prefix(1);
@@ -69,6 +79,37 @@ deque<string_view> tokenise(string_view s)
     return tokens;
 }
 
+string recurse(deque<string_view> d, size_t n)
+{
+    string s = string(" ") + string{d[n]} + " ";
+    n++;
+    if (n == d.size())
+        return s;
+    if (is_number(d[n]))
+    {
+        s.append(d[n]);
+    }
+    else
+    {
+        const auto expression = recurse(d, n);
+        s = expression + s;
+    }
+    n++;
+    if (n == d.size())
+        return s;
+    if (is_number(d[n]))
+    {
+        s = string(d[n]) + s;
+    }
+    else
+    {
+        const auto expression = recurse(d, n);
+        s = expression + s;
+    }
+
+    return s;
+}
+
 string infix(string_view rpn)
 {
     const auto tokens = tokenise(rpn);
@@ -77,7 +118,8 @@ string infix(string_view rpn)
         for (const auto& t : tokens) s.append(string{t}), s.append(", ");
         cout << "Tokens: " << s << '\n';
     }
-
+    return recurse(tokens, 0);
+/*
     if (tokens.size() > 1)
     {
         return string(tokens[2]) + " " + string(tokens[0]) + " " + string(tokens[1]);
@@ -88,6 +130,7 @@ string infix(string_view rpn)
     string s;
     for (const auto& t : tokens) s.append(string{t}), s.append(", ");
     return s;
+*/
 }
 
 int main()
