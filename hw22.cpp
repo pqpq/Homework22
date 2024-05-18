@@ -45,23 +45,17 @@ deque<string_view> tokenise(string_view s)
     deque<string_view> tokens;
     while (!s.empty())
     {
-        while (!s.empty() && isspace(s[0])) s.remove_prefix(1);
-
-        if (is_number(s))
-        {
-            auto end = s.find_first_not_of(digits);
-            tokens.push_front(s.substr(0, end));
-            s.remove_prefix(end);
-        }
-        else if (is_operator(s))
-        {
-            tokens.push_front(s.substr(0, 1));
+        while (!s.empty() && isspace(s[0]))
             s.remove_prefix(1);
-        }
-        else
-        {
+
+        size_t chars_to_consume = 1;
+        if (is_number(s))
+            chars_to_consume = s.find_first_not_of(digits);
+        else if (!is_operator(s))
             throw std::invalid_argument(string{s});
-        }
+
+        tokens.push_front(s.substr(0, chars_to_consume));
+        s.remove_prefix(chars_to_consume);
     }
 
     return tokens;
@@ -80,10 +74,7 @@ string expand(deque<string_view> d, size_t& n)
         n++;
     }
     else
-    {
-        const auto expression = expand(d, n);
-        s.append("(" + expression + ")");
-    }
+        s.append("(" + expand(d, n) + ")");
 
     // left hand operand or expression
     if (is_number(d[n]))
@@ -92,10 +83,7 @@ string expand(deque<string_view> d, size_t& n)
         n++;
     }
     else
-    {
-        const auto expression = expand(d, n);
-        s = "(" + expression + ")" + s;
-    }
+        s = "(" + expand(d, n) + ")" + s;
 
     return s;
 }
@@ -104,10 +92,8 @@ string infix(string_view rpn)
 {
     try
     {
-        const auto tokens = tokenise(rpn);
         size_t n{0};
-        const auto result = expand(tokens, n);
-        return result;
+        return expand(tokenise(rpn), n);
     }
     catch (std::invalid_argument const & ex)
     {
