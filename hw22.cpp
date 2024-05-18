@@ -10,10 +10,15 @@
 //  3 4 + 5 6 + ×   ->      (3 + 4) × (5 + 6)
 
 #include <cassert>
+#include <cctype>
 #include <iostream>
 #include <string>
+#include <utility>
 
 using namespace std;
+
+constexpr const char* digits = "0123456789";
+constexpr const char* operators = "+-*/";
 
 void test(const string& a, const char* b)
 {
@@ -23,19 +28,42 @@ void test(const string& a, const char* b)
         cerr << "Test FAILED! : \"" << a << "\" != \"" << b << "\"\n";
 }
 
+bool contains(const char* s, char c)
+{
+    return string_view(s).find(c) != string_view::npos;
+}
+
+pair<string_view, string_view> token(string_view s)
+{
+    cout << "token(" << s << ") : ";
+
+    while (!s.empty() && isspace(s[0])) s.remove_prefix(1);
+
+    if (contains(digits, s[0]))
+    {
+        auto end = s.find_first_not_of(digits);
+        cout << "digits " << end << " '" << s.substr(0, end) << "', '" << s.substr(end) << "'\n";
+        return { s.substr(0, end), s.substr(end) };
+    }
+    else if (contains(operators, s[0]))
+    {
+        cout << "op '" << s.substr(0, 1) << "', '" << s.substr(1) << "'\n";
+        return { s.substr(0, 1), s.substr(1) };
+    }
+
+    cout << "nowt\n";
+    return { {}, s };
+}
+
 string infix(string_view rpn)
 {
-    auto a = rpn.find_first_not_of("0123456789");
-    auto b = rpn.find_first_not_of("0123456789", a + 1);
-    auto c = rpn.find_first_not_of(" ", b);
-    if (a == string_view::npos || b == string_view::npos || c == string_view::npos)
+    const auto a = token(rpn);
+    const auto b = token(a.second);
+    const auto c = token(b.second);
+    if (a.first.empty() || b.first.empty() || c.first.empty())
         return "???"; // {};
 
-    const auto first  = rpn.substr(0, a);
-    a++;
-    const auto second = rpn.substr(a, b - a);
-    const auto third  = rpn.substr(c);
-    return string(first) + " " + string(third) + " " + string(second);
+    return string(a.first) + " " + string(c.first) + " " + string(b.first);
 }
 
 int main()
@@ -46,5 +74,8 @@ int main()
     test(infix("7 8 *"), "7 * 8");
     test(infix("7 8*"), "7 * 8");
     test(infix("7777 8  *"), "7777 * 8");
+
+    // next level
+    test(infix("3 4 − 5 +"), "3 - 4 + 5");
     return 0;
 }
