@@ -14,7 +14,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
-#include <vector>
+#include <deque>
 
 using namespace std;
 
@@ -34,11 +34,11 @@ bool contains(const char* s, char c)
     return string_view(s).find(c) != string_view::npos;
 }
 
-vector<string_view> tokenise(string_view s)
+deque<string_view> tokenise(string_view s)
 {
     cout << "tokenise(" << s << ") :\n";
 
-    vector<string_view> tokens;
+    deque<string_view> tokens;
 
     while (!s.empty())
     {
@@ -49,13 +49,13 @@ vector<string_view> tokenise(string_view s)
         if (contains(digits, s[0]))
         {
             auto end = s.find_first_not_of(digits);
-            tokens.push_back(s.substr(0, end));
+            tokens.push_front(s.substr(0, end));
             s.remove_prefix(end);
             cout << "dig '" << tokens.back() << "'\n";
         }
         else if (contains(operators, s[0]))
         {
-            tokens.push_back(s.substr(0, 1));
+            tokens.push_front(s.substr(0, 1));
             s.remove_prefix(1);
             cout << "opr '" << tokens.back() << "'\n";
         }
@@ -72,9 +72,15 @@ vector<string_view> tokenise(string_view s)
 string infix(string_view rpn)
 {
     const auto tokens = tokenise(rpn);
+    {
+        string s;
+        for (const auto& t : tokens) s.append(string{t}), s.append(", ");
+        cout << "Tokens: " << s << '\n';
+    }
+
     if (tokens.size() > 1)
     {
-        return string(tokens[0]) + " " + string(tokens[2]) + " " + string(tokens[1]);
+        return string(tokens[2]) + " " + string(tokens[0]) + " " + string(tokens[1]);
     }
     if (tokens.empty())
         return "@@@"; // {};
