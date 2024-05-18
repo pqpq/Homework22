@@ -79,7 +79,7 @@ deque<string_view> tokenise(string_view s)
     return tokens;
 }
 
-string recurse(deque<string_view> d, size_t& n)
+string expand(deque<string_view> d, size_t& n)
 {
     cout << "\nrecurse(" << n << ") : ";
     string s = string(" ") + string{d[n]} + " ";
@@ -93,7 +93,7 @@ string recurse(deque<string_view> d, size_t& n)
     }
     else
     {
-        const auto expression = recurse(d, n);
+        const auto expression = expand(d, n);
         s.append("(" + expression + ")");
     }
     if (n == d.size())
@@ -105,7 +105,7 @@ string recurse(deque<string_view> d, size_t& n)
     }
     else
     {
-        const auto expression = recurse(d, n);
+        const auto expression = expand(d, n);
         s = "(" + expression + ")" + s;
     }
 
@@ -123,7 +123,7 @@ string infix(string_view rpn)
         cout << "Tokens: " << s << '\n';
     }
     size_t n{0};
-    const auto result = recurse(tokens, n);
+    const auto result = expand(tokens, n);
     cout << "Infix: " << result << '\n';
     return result; //recurse(tokens, 0);
 }
@@ -137,7 +137,7 @@ int main()
     test(infix("7 8/"), "7 / 8");
     test(infix("7777 8  *"), "7777 * 8");
 
-    // next level
+    // some nesting
     test(infix("3 4 - 5 +"), "(3 - 4) + 5");
 
     // harder
