@@ -13,6 +13,7 @@
 #include <string>
 
 using namespace std;
+using Tokens = deque<string>;
 
 constexpr const char* digits = "0123456789";
 constexpr const char* operators = "+-*/";
@@ -40,9 +41,9 @@ bool is_operator(string_view s)
     return contains(operators, s[0]);
 }
 
-deque<string_view> tokenise(string_view s)
+Tokens tokenise(string_view s)
 {
-    deque<string_view> tokens;
+    Tokens tokens;
     while (!s.empty())
     {
         while (!s.empty() && isspace(s[0]))
@@ -54,18 +55,18 @@ deque<string_view> tokenise(string_view s)
         else if (!is_operator(s))
             throw std::invalid_argument(string{s});
 
-        tokens.push_front(s.substr(0, chars_to_consume));
+        tokens.push_front(string{s.substr(0, chars_to_consume)});
         s.remove_prefix(chars_to_consume);
     }
 
     return tokens;
 }
 
-string expand(deque<string_view> d, size_t& n)
+string expand(const Tokens& d, size_t& n)
 {
-    const auto op = string{d[n++]};
-    const auto right = is_number(d[n]) ? string{d[n++]} : string("(") + expand(d, n) + ")";
-    const auto left  = is_number(d[n]) ? string{d[n++]} : string("(") + expand(d, n) + ")";
+    const auto op = d[n++];
+    const auto right = is_number(d[n]) ? d[n++] : "(" + expand(d, n) + ")";
+    const auto left  = is_number(d[n]) ? d[n++] : "(" + expand(d, n) + ")";
     return left + " " + op + " " + right;
 }
 
