@@ -6,15 +6,11 @@
 // simple arithmetic (add, subract, multiply, divide) into an equivalent
 // expression using infix notation.
 
-//  3 4 − 5 +       ->      3 − 4 + 5
-//  3 4 + 5 6 + ×   ->      (3 + 4) × (5 + 6)
-
 #include <cassert>
-#include <cctype>
 #include <deque>
 #include <iostream>
+#include <stdexcept>
 #include <string>
-#include <utility>
 
 using namespace std;
 
@@ -46,33 +42,25 @@ bool is_operator(string_view s)
 
 deque<string_view> tokenise(string_view s)
 {
-    //cout << "tokenise(" << s << ") :\n";
-
     deque<string_view> tokens;
-
     while (!s.empty())
     {
-        //cout << "  '" << s << "' >>> ";
         while (!s.empty() && isspace(s[0])) s.remove_prefix(1);
-        //cout << " '" << s << "' -> ";
 
         if (is_number(s))
         {
             auto end = s.find_first_not_of(digits);
             tokens.push_front(s.substr(0, end));
             s.remove_prefix(end);
-            //cout << "dig '" << tokens.front() << "'\n";
         }
         else if (is_operator(s))
         {
             tokens.push_front(s.substr(0, 1));
             s.remove_prefix(1);
-            //cout << "opr '" << tokens.front() << "'\n";
         }
         else
         {
-            //cout << " eh? '" << s[0] << "'\n";
-            return { "???" };   // we've encountered something illegal
+            throw std::invalid_argument(string{s});
         }
     }
 
@@ -81,11 +69,11 @@ deque<string_view> tokenise(string_view s)
 
 string expand(deque<string_view> d, size_t& n)
 {
-    cout << "\nrecurse(" << n << ") : ";
+    // operator
     string s = string(" ") + string{d[n]} + " ";
     n++;
-    if (n == d.size())
-        return s;
+
+    // right hand operand or expression
     if (is_number(d[n]))
     {
         s.append(d[n]);
@@ -96,8 +84,8 @@ string expand(deque<string_view> d, size_t& n)
         const auto expression = expand(d, n);
         s.append("(" + expression + ")");
     }
-    if (n == d.size())
-        return s;
+
+    // left hand operand or expression
     if (is_number(d[n]))
     {
         s = string(d[n]) + s;
@@ -109,23 +97,22 @@ string expand(deque<string_view> d, size_t& n)
         s = "(" + expression + ")" + s;
     }
 
-    cout << '"' << s << "\"\n";
     return s;
 }
 
 string infix(string_view rpn)
 {
-    cout << "\nInput: \"" << rpn << "\"\n";
-    const auto tokens = tokenise(rpn);
+    try
     {
-        string s;
-        for (const auto& t : tokens) s.append(string{t}), s.append(", ");
-        cout << "Tokens: " << s << '\n';
+        const auto tokens = tokenise(rpn);
+        size_t n{0};
+        const auto result = expand(tokens, n);
+        return result;
     }
-    size_t n{0};
-    const auto result = expand(tokens, n);
-    cout << "Infix: " << result << '\n';
-    return result; //recurse(tokens, 0);
+    catch (std::invalid_argument const & ex)
+    {
+        return "???";
+    }
 }
 
 int main()
@@ -144,6 +131,11 @@ int main()
     test(infix("4  8  +  1  3  +  /"), "(4 + 8) / (1 + 3)");
     test(infix("28  6  2  4  *  +  /"), "28 / (6 + (2 * 4))");
     test(infix("4 2 5 * + 1 3 2 * + /"), "(4 + (2 * 5)) / (1 + (3 * 2))");
+
+    // errors
+    test(infix("banana"), "???");
+    test(infix("1 + a"), "???");
+    test(infix("b / 5"), "???");
 
     return 0;
 }
