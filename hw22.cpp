@@ -48,7 +48,7 @@ deque<string_view> tokenise(string_view s)
         while (!s.empty() && isspace(s[0]))
             s.remove_prefix(1);
 
-        size_t chars_to_consume = 1;
+        size_t chars_to_consume{1};
         if (is_number(s))
             chars_to_consume = s.find_first_not_of(digits);
         else if (!is_operator(s))
@@ -63,29 +63,10 @@ deque<string_view> tokenise(string_view s)
 
 string expand(deque<string_view> d, size_t& n)
 {
-    // operator
-    string s = string(" ") + string{d[n]} + " ";
-    n++;
-
-    // right hand operand or expression
-    if (is_number(d[n]))
-    {
-        s.append(d[n]);
-        n++;
-    }
-    else
-        s.append("(" + expand(d, n) + ")");
-
-    // left hand operand or expression
-    if (is_number(d[n]))
-    {
-        s = string(d[n]) + s;
-        n++;
-    }
-    else
-        s = "(" + expand(d, n) + ")" + s;
-
-    return s;
+    const auto op = string{d[n++]};
+    const auto right = is_number(d[n]) ? string{d[n++]} : string("(") + expand(d, n) + ")";
+    const auto left  = is_number(d[n]) ? string{d[n++]} : string("(") + expand(d, n) + ")";
+    return left + " " + op + " " + right;
 }
 
 string infix(string_view rpn)
